@@ -1,0 +1,29 @@
+### Register
+POST http://localhost:5080/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpassword"
+}
+
+### Login
+POST http://localhost:5080/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpassword"
+}
+
+### Get Protected 
+GET http://localhost:5080/protected
+X-Username: testuser
+X-CSRF-Token: todo
+Cookie: session_token=todo
+
+### Logout 
+GET http://localhost:5080/logout
+X-Username: testuser
+X-CSRF-Token: todo
+Cookie: session_token=todo

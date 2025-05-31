@@ -170,5 +170,6 @@ func main() {
 
 	fmt.Println(arkTypeCode)
 
-	Init_server()
+	// Init_server()
+	Init_Auth()
 }
