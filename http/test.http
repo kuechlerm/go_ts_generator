@@ -1,0 +1,9 @@
+GET http://localhost:5080/
+
+### POST Test
+POST http://localhost:5080/todos
+Content-Type: application/json
+
+{
+  "title": "Test 1"
+}
