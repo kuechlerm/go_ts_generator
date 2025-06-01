@@ -81,6 +81,44 @@ func (q *Queries) ListAuthors(ctx context.Context) ([]Author, error) {
 	return items, nil
 }
 
+const listAuthorsComplex = `-- name: ListAuthorsComplex :many
+Select name, bio from authors
+WHERE name LIKE ? and id > ?
+`
+
+type ListAuthorsComplexParams struct {
+	Name string `json:"name" validate:"required,min=3,max=100"`
+	ID   int64  `json:"id"`
+}
+
+type ListAuthorsComplexRow struct {
+	Name string         `json:"name" validate:"required,min=3,max=100"`
+	Bio  sql.NullString `json:"bio"`
+}
+
+func (q *Queries) ListAuthorsComplex(ctx context.Context, arg ListAuthorsComplexParams) ([]ListAuthorsComplexRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAuthorsComplex, arg.Name, arg.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAuthorsComplexRow
+	for rows.Next() {
+		var i ListAuthorsComplexRow
+		if err := rows.Scan(&i.Name, &i.Bio); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateAuthor = `-- name: UpdateAuthor :exec
 UPDATE authors
 set name = ?,

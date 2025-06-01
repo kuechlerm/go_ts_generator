@@ -6,6 +6,10 @@ WHERE id = ? LIMIT 1;
 SELECT * FROM authors
 ORDER BY name;
 
+-- name: ListAuthorsComplex :many
+Select name, bio from authors
+WHERE name LIKE ? and id > ?;
+
 -- name: CreateAuthor :one
 INSERT INTO authors (
   name, bio
