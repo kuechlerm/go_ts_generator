@@ -63,8 +63,9 @@ func Init_Auth() {
 		csrfToken := generateToken(32)
 
 		http.SetCookie(c.Response(), &http.Cookie{
-			Name:     "session_token",
-			Value:    sessionToken,
+			Name:  "session_token",
+			Value: sessionToken,
+			// expiration lieber in DB (Login-struct) abbilden
 			Expires:  time.Now().Add(14 * 24 * time.Hour),
 			HttpOnly: true,
 		})

@@ -1,22 +1,36 @@
 // generated code - do not edit
 import { type } from "arktype";
 
-export const Todo_Request_Schema = type({
-  id: "number",
-  title: "string",
+export const BeispielAnlegen_Request_Schema = type({
+  name: "3 <= string <= 100",
 });
+export type BeispielAnlegen_Request =
+  typeof BeispielAnlegen_Request_Schema.infer;
 
-type Todo_Request = typeof Todo_Request_Schema.infer;
-type Todo_Response = {
-  id: number;
-};
+export const BeispielAnlegen_Response_Schema = type({
+  id: "number",
+});
+export type BeispielAnlegen_Response =
+  typeof BeispielAnlegen_Response_Schema.infer;
+
+export const BeispielAendern_Request_Schema = type({
+  name: "3 <= string <= 100",
+});
+export type BeispielAendern_Request =
+  typeof BeispielAendern_Request_Schema.infer;
+
+export const BeispielAendern_Response_Schema = type({
+  id: "number",
+});
+export type BeispielAendern_Response =
+  typeof BeispielAendern_Response_Schema.infer;
 
 export class RPC_Client {
   constructor(public base_url: string) {}
 
   async #do_fetch<T>(path: string, args: T) {
     try {
-      const result = await fetch(this.base_url + path, {
+      const result = await fetch(new URL(path, this.base_url).href, {
         method: "POST",
         body: JSON.stringify(args),
       });
@@ -37,8 +51,19 @@ export class RPC_Client {
     }
   }
 
-  add_todo(args: Todo_Request) {
-    // validieren?
-    return this.#do_fetch<Todo_Response>("/add_todos", args);
+  async beispiel_anlegen(args: BeispielAnlegen_Request) {
+    // todo: validieren?
+    return await this.#do_fetch<BeispielAnlegen_Response>(
+      "/beispielanlegen",
+      args,
+    );
+  }
+
+  async beispiel_aendern(args: BeispielAendern_Request) {
+    // todo: validieren?
+    return await this.#do_fetch<BeispielAendern_Response>(
+      "/beispielaendern",
+      args,
+    );
   }
 }

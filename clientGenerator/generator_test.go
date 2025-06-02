@@ -1,46 +1,69 @@
 package clientGenerator
 
 import (
-	"go/ast"
-	"go/parser"
-	"go/token"
-	"os"
 	"reflect"
 	"testing"
 )
 
-func TestListStructs(t *testing.T) {
-	file_content, err := os.ReadFile("../beispiel/beispiel_handler.go")
+func TestGetRPCInfos(t *testing.T) {
+	rpcs, err := GetRPCs("../beispiel/beispiel_handler.go")
 	if err != nil {
-		t.Fatalf("Error reading Go file: %v", err)
+		t.Fatalf("Error getting RPCs: %v", err)
 	}
 
-	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, "", file_content, parser.AllErrors)
-	if err != nil {
-		t.Fatalf("Error parsing Go file: %v", err)
+	expected := []RPC{
+		{
+			path: "/beispielanlegen",
+			request: Schema{
+				Name: "BeispielAnlegen_Request",
+				Properties: []Property{
+					{Name: "name", Type: "string", Validation: "3 <= string <= 100"},
+				},
+			},
+			response: Schema{
+				Name: "BeispielAnlegen_Response",
+				Properties: []Property{
+					{Name: "id", Type: "string", Validation: ""},
+				},
+			},
+		},
+		{
+			path: "/beispielaendern",
+			request: Schema{
+				Name: "BeispielAendern_Request",
+				Properties: []Property{
+					{Name: "name", Type: "string", Validation: "3 <= string <= 100"},
+				},
+			},
+			response: Schema{
+				Name: "BeispielAendern_Response",
+				Properties: []Property{
+					{Name: "id", Type: "string", Validation: ""},
+				},
+			},
+		},
 	}
 
-	var structs []string
-	for _, decl := range node.Decls {
-		genDecl, ok := decl.(*ast.GenDecl)
-		if !ok || genDecl.Tok != token.TYPE {
-			continue
-		}
-		for _, spec := range genDecl.Specs {
-			typeSpec := spec.(*ast.TypeSpec)
-			if _, ok := typeSpec.Type.(*ast.StructType); ok {
-				// tsDefs = append(tsDefs, structToArkTypeSpec(typeSpec))
-				structs = append(structs, typeSpec.Name.Name)
-			}
-		}
+	if !reflect.DeepEqual(rpcs, expected) {
+		t.Errorf("slices are not equal: %v vs %v", rpcs, expected)
 	}
+}
 
-	expected := []string{
-		"affe",
-	}
-
-	if !reflect.DeepEqual(structs, expected) {
-		t.Errorf("slices are not equal: %v vs %v", structs, expected)
-	}
+func TestMapValidation(t *testing.T) {
+	// tests := []struct {
+	// 	input    string
+	// 	expected string
+	// }{
+	// 	{"required", "required"},
+	// 	{"min=3", "min:3"},
+	// 	{"max=100", "max:100"},
+	// 	{"required,min=3,max=100", "required,min:3,max:100"},
+	// }
+	//
+	// for _, test := range tests {
+	// 	result := MapValidation(test.input)
+	// 	if result != test.expected {
+	// 		t.Errorf("MapValidation(%q) = %q; want %q", test.input, result, test.expected)
+	// 	}
+	// }
 }
