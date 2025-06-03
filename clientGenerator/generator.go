@@ -176,6 +176,6 @@ func goTypeToArkType(goType string) string {
 	}
 }
 
-func MapValidation(goValidation string) string {
+func MapValidation(typ, validation string) string {
 	return "todo"
 }

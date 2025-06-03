@@ -50,20 +50,18 @@ func TestGetRPCInfos(t *testing.T) {
 }
 
 func TestMapValidation(t *testing.T) {
-	// tests := []struct {
-	// 	input    string
-	// 	expected string
-	// }{
-	// 	{"required", "required"},
-	// 	{"min=3", "min:3"},
-	// 	{"max=100", "max:100"},
-	// 	{"required,min=3,max=100", "required,min:3,max:100"},
-	// }
-	//
-	// for _, test := range tests {
-	// 	result := MapValidation(test.input)
-	// 	if result != test.expected {
-	// 		t.Errorf("MapValidation(%q) = %q; want %q", test.input, result, test.expected)
-	// 	}
-	// }
+	tests := []struct {
+		typ      string
+		validate string
+		arktype  string
+	}{
+		{"string", "required", "string"},
+	}
+
+	for _, test := range tests {
+		result := MapValidation(test.typ, test.validate)
+		if result != test.arktype {
+			t.Errorf("MapValidation(%q, %q) = %q; want %q", test.typ, test.validate, result, test.arktype)
+		}
+	}
 }
