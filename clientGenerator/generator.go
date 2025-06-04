@@ -176,6 +176,15 @@ func goTypeToArkType(goType string) string {
 	}
 }
 
-func MapValidation(typ, validation string) string {
+func MapValidation(ts_typ, validation string) string {
+	if ts_typ == "string" || ts_typ == "number" {
+		switch validation {
+		case "required":
+			return ts_typ + " > 0"
+		case "":
+			return ts_typ + " | undefined"
+		}
+	}
+
 	return "todo"
 }

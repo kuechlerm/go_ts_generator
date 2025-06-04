@@ -39,6 +39,8 @@ export class RPC_Client {
         throw new Error("fetch result not ok");
       }
 
+      // fix: Fehlerbehandlung verbessern; throw oder error-Result?
+      // besser error-Result, da kein to_async_result Wrapper nötig wäre
       try {
         const data = await result.json();
 

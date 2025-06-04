@@ -17,13 +17,13 @@ func TestGetRPCInfos(t *testing.T) {
 			request: Schema{
 				Name: "BeispielAnlegen_Request",
 				Properties: []Property{
-					{Name: "name", Type: "string", Validation: "3 <= string <= 100"},
+					{"name", "string", "3 <= string <= 100"},
 				},
 			},
 			response: Schema{
 				Name: "BeispielAnlegen_Response",
 				Properties: []Property{
-					{Name: "id", Type: "string", Validation: ""},
+					{"id", "string", ""},
 				},
 			},
 		},
@@ -32,13 +32,13 @@ func TestGetRPCInfos(t *testing.T) {
 			request: Schema{
 				Name: "BeispielAendern_Request",
 				Properties: []Property{
-					{Name: "name", Type: "string", Validation: "3 <= string <= 100"},
+					{"name", "string", "3 <= string <= 100"},
 				},
 			},
 			response: Schema{
 				Name: "BeispielAendern_Response",
 				Properties: []Property{
-					{Name: "id", Type: "string", Validation: ""},
+					{"id", "string", ""},
 				},
 			},
 		},
@@ -55,7 +55,10 @@ func TestMapValidation(t *testing.T) {
 		validate string
 		arktype  string
 	}{
-		{"string", "required", "string"},
+		{"string", "required", "string > 0"},
+		{"string", "", "string | undefined"},
+		{"number", "required", "number > 0"},
+		{"number", "", "number | undefined"},
 	}
 
 	for _, test := range tests {
