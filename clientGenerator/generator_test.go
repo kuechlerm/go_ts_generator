@@ -57,8 +57,14 @@ func TestMapValidation(t *testing.T) {
 	}{
 		{"string", "required", "string > 0"},
 		{"string", "", "string | undefined"},
+
 		{"number", "required", "number > 0"},
 		{"number", "", "number | undefined"},
+
+		{"boolean", "required", "boolean"},
+		{"boolean", "", "boolean | undefined"},
+
+		// todo: date, arrays, ... -> Amplenote
 	}
 
 	for _, test := range tests {

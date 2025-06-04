@@ -186,5 +186,14 @@ func MapValidation(ts_typ, validation string) string {
 		}
 	}
 
+	if ts_typ == "boolean" {
+		switch validation {
+		case "required":
+			return ts_typ
+		case "":
+			return ts_typ + " | undefined"
+		}
+	}
+
 	return "todo"
 }
