@@ -6,9 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -28,105 +27,127 @@ type Login struct {
 var users = map[string]Login{}
 
 func Init_Auth() {
-	server := echo.New()
+	server := gin.Default()
 
-	server.POST("/register", func(c echo.Context) error {
+	server.POST("/register", func(c *gin.Context) {
 		args := new(Login_Request)
 		if err := c.Bind(args); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request format"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+			return
 		}
 
 		hashedPassword, err := hashPassword(args.Password)
 		if err != nil {
-			return c.JSON(500, map[string]string{"error": "Failed to hash password"})
+			c.JSON(500, gin.H{"error": "Failed to hash password"})
+			return
 		}
 
 		users[args.Username] = Login{
 			HashedPassword: hashedPassword,
 		}
 
-		return c.JSON(201, map[string]string{"message": "User registered successfully"})
+		c.JSON(201, gin.H{"message": "User registered successfully"})
 	})
 
-	server.POST("/login", func(c echo.Context) error {
+	server.POST("/login", func(c *gin.Context) {
 		args := new(Login_Request)
 		if err := c.Bind(args); err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request format"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+			return
 		}
 
 		user, exists := users[args.Username]
 		if !exists || !checkPasswordHash(args.Password, user.HashedPassword) {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid username or password"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+			return
 		}
 
 		sessionToken := generateToken(32)
 		csrfToken := generateToken(32)
 
-		http.SetCookie(c.Response(), &http.Cookie{
-			Name:  "session_token",
-			Value: sessionToken,
-			// expiration lieber in DB (Login-struct) abbilden
-			Expires:  time.Now().Add(14 * 24 * time.Hour),
-			HttpOnly: true,
-		})
+		c.SetCookie(
+			"session_token",
+			sessionToken,
+			// todo: expiration lieber in DB (Login-struct) abbilden
+			60*60*24*14, // 14 days in seconds
+			"/",
+			"localhost", // todo: anpassen für Prod
+			false,       // todo: so?
+			true,
+		)
 
-		http.SetCookie(c.Response(), &http.Cookie{
-			Name:     "csrf_token",
-			Value:    csrfToken,
-			Expires:  time.Now().Add(14 * 24 * time.Hour),
-			HttpOnly: false, // CSRF token should be accessible via JavaScript
-		})
+		c.SetCookie(
+			"csrf_token",
+			csrfToken,
+			// todo: expiration lieber in DB (Login-struct) abbilden
+			60*60*24*14, // 14 days in seconds
+			"/",
+			"localhost", // todo: anpassen für Prod
+			false,       // todo: so?
+			false,
+		)
 
 		user.SessionToken = sessionToken
 		user.CSRFToken = csrfToken
 		users[args.Username] = user
 
-		return c.JSON(http.StatusOK, map[string]string{
+		c.JSON(http.StatusOK, gin.H{
 			"message": "Login successful",
 		})
 	})
 
-	server.GET("/protected", func(c echo.Context) error {
+	server.GET("/protected", func(c *gin.Context) {
 		if err := authorize(c); err != nil {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
 		}
 
-		return c.JSON(http.StatusOK, map[string]string{"message": "Access granted to protected resource"})
+		c.JSON(http.StatusOK, gin.H{"message": "Access granted to protected resource"})
 	})
 
-	server.POST("/logout", func(c echo.Context) error {
+	server.POST("/logout", func(c *gin.Context) {
 		if err := authorize(c); err != nil {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
 		}
 
-		http.SetCookie(c.Response(), &http.Cookie{
-			Name:     "session_token",
-			Value:    "",
-			Expires:  time.Now().Add(-1 * time.Hour), // Expire the session token
-			HttpOnly: true,
-		})
+		c.SetCookie(
+			"session_token",
+			"",
+			-1, // delete cookie
+			"/",
+			"localhost", // todo: anpassen für Prod
+			false,       // todo: so?
+			true,
+		)
 
-		http.SetCookie(c.Response(), &http.Cookie{
-			Name:     "csrf_token",
-			Value:    "",
-			Expires:  time.Now().Add(-1 * time.Hour), // Expire the session token
-			HttpOnly: false,
-		})
+		c.SetCookie(
+			"csrf_token",
+			"",
+			// todo: expiration lieber in DB (Login-struct) abbilden
+			-1, // 14 days in seconds
+			"/",
+			"localhost", // todo: anpassen für Prod
+			false,       // todo: so?
+			false,
+		)
 
 		// todo: sollte viellecht eher user id sein
-		username := c.Request().Header.Get("X-Username")
+		username := c.GetHeader("X-Username")
 
 		user, exists := users[username]
 		if !exists {
-			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
 		}
 		user.SessionToken = ""
 		user.CSRFToken = ""
 		users[username] = user
-		return c.JSON(http.StatusOK, map[string]string{"message": "Logout successful"})
+		c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
 	})
 
-	server.Logger.Fatal(server.Start(":5080"))
+	// server.Logger.Fatal(server.Start(":5080"))
+	server.Run(":5080")
 }
 
 func hashPassword(password string) (string, error) {
@@ -150,9 +171,9 @@ func generateToken(length int) string {
 
 var ErrAuth = errors.New("authentication error")
 
-func authorize(c echo.Context) error {
+func authorize(c *gin.Context) error {
 	// todo: sollte viellecht eher user id sein
-	username := c.Request().Header.Get("X-Username")
+	username := c.GetHeader("X-Username")
 
 	user, exists := users[username]
 	if !exists {
@@ -160,11 +181,11 @@ func authorize(c echo.Context) error {
 	}
 
 	sessionToken, err := c.Cookie("session_token")
-	if err != nil || sessionToken == nil || sessionToken.Value == "" || sessionToken.Value != user.SessionToken {
+	if err != nil || sessionToken == "" || sessionToken != user.SessionToken {
 		return ErrAuth
 	}
 
-	csrfToken := c.Request().Header.Get("X-CSRF-Token")
+	csrfToken := c.GetHeader("X-CSRF-Token")
 	if csrfToken == "" || csrfToken != user.CSRFToken {
 		return ErrAuth
 	}

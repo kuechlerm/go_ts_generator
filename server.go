@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/labstack/echo/v4"
 )
 
 const InsertTodo_Path = "/todos"
@@ -24,26 +24,28 @@ type Todo struct {
 }
 
 func Init_server() {
-	server := echo.New()
+	server := gin.Default()
 	validate := validator.New()
 
-	server.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
+	server.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "Hello, World!")
 	})
 
-	server.POST(InsertTodo_Path, func(c echo.Context) error {
+	server.POST(InsertTodo_Path, func(c *gin.Context) {
 		args, err := MapAndValidate[InsertTodo_Request](c, validate)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 
-		return c.JSON(http.StatusCreated, Todo{Title: args.Title})
+		c.JSON(http.StatusCreated, Todo{Title: args.Title})
 	})
 
-	server.Logger.Fatal(server.Start(":5080"))
+	// server.Logger.Fatal(server.Start(":5080"))
+	server.Run(":5080")
 }
 
-func MapAndValidate[T any](c echo.Context, validate *validator.Validate) (*T, error) {
+func MapAndValidate[T any](c *gin.Context, validate *validator.Validate) (*T, error) {
 	args := new(T)
 	if err := c.Bind(args); err != nil {
 		return args, err
