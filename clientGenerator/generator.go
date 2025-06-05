@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"os"
 	"strings"
 
 	"github.com/fatih/structtag"
@@ -29,13 +28,8 @@ type RPC struct {
 	response Schema
 }
 
-func GetRPCs(file_path string) ([]RPC, error) {
+func GetRPCs(file_content string) ([]RPC, error) {
 	rpcs := []RPC{}
-
-	file_content, err := os.ReadFile("../beispiel/beispiel_handler.go")
-	if err != nil {
-		return rpcs, errors.New("Error reading Go file: " + err.Error())
-	}
 
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, "", file_content, parser.AllErrors)
@@ -46,7 +40,7 @@ func GetRPCs(file_path string) ([]RPC, error) {
 	rpcNameMap := map[string]RPC{}
 
 	for _, decl := range node.Decls {
-		fmt.Println(decl)
+		// fmt.Println(decl)
 		genDecl, ok := decl.(*ast.GenDecl)
 
 		if !ok || (genDecl.Tok != token.TYPE && genDecl.Tok != token.CONST) {
@@ -105,6 +99,51 @@ func GetRPCs(file_path string) ([]RPC, error) {
 	return rpcs, nil
 }
 
+func GenerateTS(input string) (string, error) {
+	rpcs, err := GetRPCs(input)
+	if err != nil {
+		return "", err
+	}
+
+	var tsCode strings.Builder
+	tsCode.WriteString(`import { type } from "arktype";`)
+	tsCode.WriteString("\n\n")
+
+	for _, rpc := range rpcs {
+		// generate request schema
+		tsCode.WriteString(fmt.Sprintf("export const %s_Schema = type({\n", rpc.request.Name))
+		for _, prop := range rpc.request.Properties {
+			tsCode.WriteString(fmt.Sprintf(`  %s: "%s",`, prop.Name, prop.Type))
+			tsCode.WriteString("\n")
+		}
+		tsCode.WriteString("});\n\n")
+
+		// generate request type
+		tsCode.WriteString(fmt.Sprintf("export type %s = typeof %s_Schema.infer;\n\n", rpc.request.Name, rpc.request.Name))
+
+		// generate response schema
+		tsCode.WriteString(fmt.Sprintf("export const %s_Schema = type({\n", rpc.response.Name))
+		for _, prop := range rpc.response.Properties {
+			tsCode.WriteString(fmt.Sprintf(`  %s: "%s",`, prop.Name, prop.Type))
+			tsCode.WriteString("\n")
+		}
+		tsCode.WriteString("});\n\n")
+
+		// generate response type
+		tsCode.WriteString(fmt.Sprintf("export type %s = typeof %s_Schema.infer;\n\n", rpc.response.Name, rpc.response.Name))
+	}
+
+	// rpc client class
+	tsCode.WriteString("export class RPC_Client {\n")
+	tsCode.WriteString("  constructor(public base_url: string) {}\n\n")
+	tsCode.WriteString("  async #do_fetch<TRequest, TResponse>(\n")
+	tsCode.WriteString("    path: string,\n")
+	tsCode.WriteString("    args: TRequest,\n")
+	tsCode.WriteString("  ): Promise<{ result: TResponse | null; error: string | null }> {\n")
+
+	return tsCode.String(), nil
+}
+
 func MapSchema(typeSpec *ast.TypeSpec) Schema {
 	properties := []Property{}
 
@@ -129,18 +168,24 @@ func MapSchema(typeSpec *ast.TypeSpec) Schema {
 				continue
 			}
 
-			fmt.Printf("Processing field: %s || Tags: %s \n", field.Names, tags.Tags())
+			// fmt.Printf("Processing field: %s || Tags: %s \n", field.Names, tags.Tags())
 
+			validate_tag_used := false
 			for _, tag := range tags.Tags() {
 				if tag.Key == "json" {
 					jsonPropertyName = tag.Name // ist der erste Tag-Wert
 				}
 
 				if tag.Key == "validate" {
-					// todo:
-					fmt.Printf("Validation tag found: %s\n", tag.Name)
-					fmt.Printf("Validation OPTIONS tag found: %s\n", tag.Options)
+					// fmt.Printf("Validation tag found: %s\n", tag.Name)
+					// fmt.Printf("Validation OPTIONS tag found: %s\n", tag.Options)
+					fieldType = mapValidation(fieldType, tag.Name)
+					validate_tag_used = true
 				}
+			}
+
+			if !validate_tag_used {
+				fieldType = mapValidation(fieldType, "")
 			}
 		}
 
@@ -176,7 +221,7 @@ func goTypeToArkType(goType string) string {
 	}
 }
 
-func MapValidation(ts_typ, validation string) string {
+func mapValidation(ts_typ, validation string) string {
 	if ts_typ == "string" || ts_typ == "number" {
 		switch validation {
 		case "required":
@@ -189,7 +234,7 @@ func MapValidation(ts_typ, validation string) string {
 	if ts_typ == "boolean" {
 		switch validation {
 		case "required":
-			return ts_typ
+			return "true"
 		case "":
 			return ts_typ + " | undefined"
 		}

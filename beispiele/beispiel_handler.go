@@ -1,4 +1,4 @@
-package beispiel
+package beispiele
 
 const BeispielAnlegen_Path = "/beispielanlegen"
 
