@@ -1,6 +1,6 @@
 import { type } from "arktype";
 
-export const Basic_Request_Schema = type({
+export const Eins_Request_Schema = type({
   requiredString: "string > 0",
   optionalString: "string | undefined",
   requiredInt: "number > 0",
@@ -9,13 +9,25 @@ export const Basic_Request_Schema = type({
   optionalBool: "boolean | undefined",
 });
 
-export type Basic_Request = typeof Basic_Request_Schema.infer;
+export type Eins_Request = typeof Eins_Request_Schema.infer;
 
-export const Basic_Response_Schema = type({
+export const Eins_Response_Schema = type({
   responseString: "string > 0",
 });
 
-export type Basic_Response = typeof Basic_Response_Schema.infer;
+export type Eins_Response = typeof Eins_Response_Schema.infer;
+
+export const Zwei_Request_Schema = type({
+  optionalString: "string | undefined",
+});
+
+export type Zwei_Request = typeof Zwei_Request_Schema.infer;
+
+export const Zwei_Response_Schema = type({
+  responseString: "string > 0",
+});
+
+export type Zwei_Response = typeof Zwei_Response_Schema.infer;
 
 export class RPC_Client {
   constructor(public base_url: string) {}
@@ -56,6 +68,8 @@ export class RPC_Client {
     }
   }
 
-  basic = (args: Basic_Request) =>
-    this.#do_fetch<Basic_Request, Basic_Response>("/basic", args);
+  eins = (args: Eins_Request) =>
+    this.#do_fetch<Eins_Request, Eins_Response>("/eins", args);
+  zwei = (args: Zwei_Request) =>
+    this.#do_fetch<Zwei_Request, Zwei_Response>("/zwei", args);
 }

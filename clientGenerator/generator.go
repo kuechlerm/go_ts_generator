@@ -167,8 +167,20 @@ func GenerateTS(input string) (string, error) {
 	tsCode.WriteString("      };\n")
 	tsCode.WriteString("    }\n")
 	tsCode.WriteString("  }\n\n")
-	tsCode.WriteString("  basic = (args: Basic_Request) =>\n")
-	tsCode.WriteString("    this.#do_fetch<Basic_Request, Basic_Response>(\"/basic\", args);\n")
+
+	for _, rpc := range rpcs {
+		tsCode.WriteString(
+			"  " +
+				strings.ToLower(strings.Split(rpc.request.Name, "_")[0]) +
+				" = (args: " + rpc.request.Name + ") =>\n")
+		tsCode.WriteString(
+			"    this.#do_fetch<" +
+				rpc.request.Name +
+				", " +
+				rpc.response.Name +
+				">(\"" + rpc.path + "\", args);\n")
+	}
+
 	tsCode.WriteString("}\n")
 
 	return tsCode.String(), nil

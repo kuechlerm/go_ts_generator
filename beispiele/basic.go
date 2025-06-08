@@ -1,8 +1,8 @@
 package beispiele
 
-const Basic_Path = "/basic"
+const Eins_Path = "/eins"
 
-type Basic_Request struct {
+type Eins_Request struct {
 	RequiredString string `json:"requiredString" validate:"required"`
 	OptionalString string `json:"optionalString"`
 	RequiredInt    int    `json:"requiredInt" validate:"required"`
@@ -11,7 +11,17 @@ type Basic_Request struct {
 	OptionalBool   bool   `json:"optionalBool"`
 }
 
-type Basic_Response struct {
+type Eins_Response struct {
+	ResponseString string `json:"responseString" validate:"required"`
+}
+
+const Zwei_Path = "/zwei"
+
+type Zwei_Request struct {
+	OptionalString string `json:"optionalString"`
+}
+
+type Zwei_Response struct {
 	ResponseString string `json:"responseString" validate:"required"`
 }
 
