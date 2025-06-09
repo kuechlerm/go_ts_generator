@@ -13,7 +13,7 @@ func TestGetRPCInfosMitBeispiel(t *testing.T) {
 		t.Fatalf("Error reading Go file: %v", err)
 	}
 
-	rpcs, err := GetRPCs(string(go_content))
+	rpcs, err := getRPCs(string(go_content))
 	if err != nil {
 		t.Fatalf("Error getting RPCs: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestGenerateTS(t *testing.T) {
 		t.Fatalf("Error reading TS file: %v", err)
 	}
 
-	ts_result, err := GenerateTS(string(go_content))
+	ts_result, err := generateTS(string(go_content))
 	if err != nil {
 		t.Fatalf("Error generating TS: %v", err)
 	}
@@ -82,7 +82,6 @@ func TestGenerateTS(t *testing.T) {
 		if expected_line != result_line {
 			t.Errorf("Line %d mismatch:\nExpected: %s\nGot: %s", i+1, expected_line, result_line)
 		}
-
 	}
 }
 

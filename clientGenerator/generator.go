@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"strings"
 
 	"github.com/fatih/structtag"
@@ -28,7 +29,26 @@ type RPC struct {
 	response Schema
 }
 
-func GetRPCs(file_content string) ([]RPC, error) {
+func Run(go_file_path, target_path string) error {
+	go_content, err := os.ReadFile(go_file_path)
+	if err != nil {
+		return errors.New("Error reading Go file: " + err.Error())
+	}
+
+	ts_code, err := generateTS(string(go_content))
+	if err != nil {
+		return errors.New("Error generating TypeScript code: " + err.Error())
+	}
+
+	err = os.WriteFile(target_path, []byte(ts_code), 0644)
+	if err != nil {
+		return errors.New("Error writing TypeScript file: " + err.Error())
+	}
+
+	return nil
+}
+
+func getRPCs(file_content string) ([]RPC, error) {
 	rpcs := []RPC{}
 
 	fset := token.NewFileSet()
@@ -80,11 +100,11 @@ func GetRPCs(file_content string) ([]RPC, error) {
 				call := rpcNameMap[specName]
 
 				if strings.HasSuffix(typeSpec.Name.Name, "_Request") {
-					call.request = MapSchema(typeSpec)
+					call.request = mapSchema(typeSpec)
 				}
 
 				if strings.HasSuffix(typeSpec.Name.Name, "_Response") {
-					call.response = MapSchema(typeSpec)
+					call.response = mapSchema(typeSpec)
 				}
 
 				rpcNameMap[specName] = call
@@ -99,8 +119,8 @@ func GetRPCs(file_content string) ([]RPC, error) {
 	return rpcs, nil
 }
 
-func GenerateTS(input string) (string, error) {
-	rpcs, err := GetRPCs(input)
+func generateTS(input string) (string, error) {
+	rpcs, err := getRPCs(input)
 	if err != nil {
 		return "", err
 	}
@@ -186,7 +206,7 @@ func GenerateTS(input string) (string, error) {
 	return tsCode.String(), nil
 }
 
-func MapSchema(typeSpec *ast.TypeSpec) Schema {
+func mapSchema(typeSpec *ast.TypeSpec) Schema {
 	properties := []Property{}
 
 	for _, field := range typeSpec.Type.(*ast.StructType).Fields.List {
